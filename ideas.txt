@@ -1,0 +1,2 @@
+player gets combo from consistent hits, loses if they miss a shot
+player has a shield they can activate for x seconds using shifts
