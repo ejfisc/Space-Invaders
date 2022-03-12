@@ -4,26 +4,38 @@ pygame.font.init()
 pygame.mixer.init()
 # os.chdir(Path.home() / 'Space Invaders')
 
+# WINDOW
 WIDTH, HEIGHT = 600, 800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Space Invaders')
 
+# FONTS
 TITLE_FONT = pygame.font.Font(str(Path('Assets', 'space_invaders.ttf')), 50)
 
+# SOUNDS
+BULLET_FIRE_SOUND = pygame.mixer.Sound(str(Path('Assets', 'player_shoot.mp3')))
+
+# ENTITIES
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 25
 BULLET_WIDTH, BULLET_HEIGHT = 5, 10
+SHIELD_WIDTH, SHIELD_HEIGHT = 80, 8
 
+# COLORS
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+# CONSTANTS
 FPS = 60
 VEL = 4
 BULLET_VEL = 7
 
-TOP_SCORES = []
+# SCORE ARRAY
+top_scores = []
+
+# CLOCK
+clock = pygame.time.Clock()
 
 # HOME SCREEN
-
 def draw_menu():
     WIN.fill(BLACK)
     title = TITLE_FONT.render('SPACE INVADERS', 1, WHITE)
@@ -31,27 +43,35 @@ def draw_menu():
     pygame.display.update()
 
 def menu():
+    pygame.mixer.music.load(str(Path('Assets', 'menu.wav')))
+    pygame.mixer.music.play(-1)
     menu_state = True
     while menu_state:
+        clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                menu_state = False
                 pygame.quit()
             
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                menu_sate = False
+                pygame.mixer.music.stop()
                 game()
 
         draw_menu()
 
 # GAME
-
-def draw_game(bullets, player):
+def draw_game(bullets, player, score, keys_pressed):
     WIN.fill(BLACK)
     pygame.draw.rect(WIN, WHITE, player)
+    if keys_pressed[pygame.K_RSHIFT]:
+        shield = pygame.Rect(player.x - 15, player.y - 15, SHIELD_WIDTH, SHIELD_HEIGHT)
+        pygame.draw.rect(WIN, WHITE, shield)
     for bullet in bullets:
         pygame.draw.rect(WIN, WHITE, bullet)
     pygame.display.update()
 
-def handle_player_movement(keys_pressed, player):
+def player_movement(keys_pressed, player):
     if keys_pressed[pygame.K_LEFT] and player.x - VEL > 5: # left
         player.x -= VEL
     if keys_pressed[pygame.K_RIGHT] and player.x + VEL + player.width < WIDTH - 5: # right
@@ -64,26 +84,32 @@ def handle_bullets(player_bullets, player):
             player_bullets.remove(bullet)
 
 def game():
+    pygame.mixer.music.load(str(Path('Assets', 'game.wav')))
+    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.play(-1)
     player = pygame.Rect(WIDTH//2 - (PLAYER_WIDTH//2), HEIGHT - (PLAYER_HEIGHT + 5), PLAYER_WIDTH, PLAYER_HEIGHT)
     player_bullets = []
+    active_shield = False
     score = 0
-    clock = pygame.time.Clock()
     game_state = True
     while game_state:
         clock.tick(FPS)
+        keys_pressed = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_state = False
                 pygame.quit()
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+            if keys_pressed[pygame.K_RSHIFT]:
+                pass
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+                BULLET_FIRE_SOUND.play()
                 bullet = pygame.Rect(player.x + PLAYER_WIDTH//2, player.y, BULLET_WIDTH, BULLET_HEIGHT)
                 player_bullets.append(bullet)
-
-        keys_pressed = pygame.key.get_pressed()
-        handle_player_movement(keys_pressed, player)
+        
+        player_movement(keys_pressed, player)
         handle_bullets(player_bullets, player)
-        draw_game(player_bullets, player)
+        draw_game(player_bullets, player, score, keys_pressed)
 
 if __name__ == '__main__':
     menu()
