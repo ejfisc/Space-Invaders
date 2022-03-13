@@ -1,4 +1,4 @@
-import pygame, os
+import pygame, os, random
 from pathlib import Path
 pygame.font.init()
 pygame.mixer.init()
@@ -19,10 +19,15 @@ BULLET_FIRE_SOUND = pygame.mixer.Sound(str(Path('Assets', 'player_shoot.mp3')))
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 25
 BULLET_WIDTH, BULLET_HEIGHT = 5, 10
 SHIELD_WIDTH, SHIELD_HEIGHT = 80, 8
+ALIEN_WIDTH, ALIEN_HEIGHT = 50, 50
+PLAYER_IMG = pygame.image.load(Path('Assets', 'player.png'))
+PLAYER = pygame.transform.scale(PLAYER_IMG, (PLAYER_WIDTH, PLAYER_HEIGHT))
 
 # COLORS
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+YELLOW = (255, 255, 0)
 
 # CONSTANTS
 FPS = 60
@@ -42,7 +47,7 @@ def draw_menu():
     WIN.blit(title, (WIDTH//2 - title.get_width()//2, 50))
     pygame.display.update()
 
-def menu():
+def menu(): 
     pygame.mixer.music.load(str(Path('Assets', 'menu.wav')))
     pygame.mixer.music.play(-1)
     menu_state = True
@@ -61,9 +66,9 @@ def menu():
         draw_menu()
 
 # GAME
-def draw_game(bullets, player, score, keys_pressed):
+def draw_game(bullets, player, score, keys_pressed, aliens):
     WIN.fill(BLACK)
-    pygame.draw.rect(WIN, WHITE, player)
+    WIN.blit(PLAYER, (player.x, player.y))
     if keys_pressed[pygame.K_RSHIFT]:
         shield = pygame.Rect(player.x - 15, player.y - 15, SHIELD_WIDTH, SHIELD_HEIGHT)
         pygame.draw.rect(WIN, WHITE, shield)
@@ -77,21 +82,32 @@ def player_movement(keys_pressed, player):
     if keys_pressed[pygame.K_RIGHT] and player.x + VEL + player.width < WIDTH - 5: # right
         player.x += VEL
 
+def alien_movement(aliens, player):
+    pass
+
 def handle_bullets(player_bullets, player):
     for bullet in player_bullets:
         bullet.y -= BULLET_VEL
         if bullet.y <= -10:
             player_bullets.remove(bullet)
 
+def generate_aliens(aliens):
+    x = random.randint(0, WIDTH - ALIEN_WIDTH)
+    y = random.randint(0, 100)
+    
+
 def game():
     pygame.mixer.music.load(str(Path('Assets', 'game.wav')))
     pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
+
     player = pygame.Rect(WIDTH//2 - (PLAYER_WIDTH//2), HEIGHT - (PLAYER_HEIGHT + 5), PLAYER_WIDTH, PLAYER_HEIGHT)
     player_bullets = []
+    aliens = []
     active_shield = False
     score = 0
     game_state = True
+
     while game_state:
         clock.tick(FPS)
         keys_pressed = pygame.key.get_pressed()
@@ -107,9 +123,11 @@ def game():
                 bullet = pygame.Rect(player.x + PLAYER_WIDTH//2, player.y, BULLET_WIDTH, BULLET_HEIGHT)
                 player_bullets.append(bullet)
         
+
         player_movement(keys_pressed, player)
+        alien_movement(aliens, player)
         handle_bullets(player_bullets, player)
-        draw_game(player_bullets, player, score, keys_pressed)
+        draw_game(player_bullets, player, score, keys_pressed, aliens)
 
 if __name__ == '__main__':
     menu()
