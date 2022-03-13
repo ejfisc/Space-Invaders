@@ -19,7 +19,7 @@ BULLET_FIRE_SOUND = pygame.mixer.Sound(str(Path('Assets', 'player_shoot.mp3')))
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 25
 BULLET_WIDTH, BULLET_HEIGHT = 5, 10
 SHIELD_WIDTH, SHIELD_HEIGHT = 80, 8
-ALIEN_WIDTH, ALIEN_HEIGHT = 50, 50
+ALIEN_WIDTH, ALIEN_HEIGHT = 40, 40
 PLAYER_IMG = pygame.image.load(Path('Assets', 'player.png'))
 PLAYER = pygame.transform.scale(PLAYER_IMG, (PLAYER_WIDTH, PLAYER_HEIGHT))
 
@@ -33,6 +33,7 @@ YELLOW = (255, 255, 0)
 FPS = 60
 VEL = 4
 BULLET_VEL = 7
+ALIEN_VEL = 1
 
 # SCORE ARRAY
 top_scores = []
@@ -74,6 +75,8 @@ def draw_game(bullets, player, score, keys_pressed, aliens):
         pygame.draw.rect(WIN, WHITE, shield)
     for bullet in bullets:
         pygame.draw.rect(WIN, WHITE, bullet)
+    for alien in aliens:
+        pygame.draw.rect(WIN, GREEN, alien)
     pygame.display.update()
 
 def player_movement(keys_pressed, player):
@@ -83,7 +86,16 @@ def player_movement(keys_pressed, player):
         player.x += VEL
 
 def alien_movement(aliens, player):
-    pass
+    for alien in aliens:
+        if player.x > alien.x: # alien is to the left of player
+           alien.x += ALIEN_VEL
+        if player.x < alien.x:
+           alien.x -= ALIEN_VEL
+        if player.y - ALIEN_HEIGHT > alien.y:
+            alien.y += ALIEN_VEL
+        if alien.colliderect(player):
+            aliens.remove(alien)
+        
 
 def handle_bullets(player_bullets, player):
     for bullet in player_bullets:
@@ -91,10 +103,14 @@ def handle_bullets(player_bullets, player):
         if bullet.y <= -10:
             player_bullets.remove(bullet)
 
-def generate_aliens(aliens):
-    x = random.randint(0, WIDTH - ALIEN_WIDTH)
-    y = random.randint(0, 100)
-    
+def populate_aliens():
+    aliens = []
+    for i in range(0, 5):
+        randx = random.randint(10, WIDTH - 50)
+        randy = random.randint(10, 100)
+        alien = pygame.Rect(randx, randy, ALIEN_WIDTH, ALIEN_HEIGHT)
+        aliens.append(alien)
+    return aliens
 
 def game():
     pygame.mixer.music.load(str(Path('Assets', 'game.wav')))
@@ -103,8 +119,7 @@ def game():
 
     player = pygame.Rect(WIDTH//2 - (PLAYER_WIDTH//2), HEIGHT - (PLAYER_HEIGHT + 5), PLAYER_WIDTH, PLAYER_HEIGHT)
     player_bullets = []
-    aliens = []
-    active_shield = False
+    aliens = populate_aliens()
     score = 0
     game_state = True
 
@@ -123,7 +138,6 @@ def game():
                 bullet = pygame.Rect(player.x + PLAYER_WIDTH//2, player.y, BULLET_WIDTH, BULLET_HEIGHT)
                 player_bullets.append(bullet)
         
-
         player_movement(keys_pressed, player)
         alien_movement(aliens, player)
         handle_bullets(player_bullets, player)
