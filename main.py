@@ -55,6 +55,7 @@ def draw_menu():
     pygame.display.update()
 
 # TODO:
+# create menu
 # select difficulty?
 # button to start game
 def menu(): 
@@ -83,13 +84,15 @@ def menu():
 # draw score
 # add alien images
 # draw hit combo score
-def draw_game(bullets, player, score, keys_pressed, aliens):
+def draw_game(player_bullets, player, score, player_health, keys_pressed, aliens, shield):
     WIN.fill(BLACK)
     WIN.blit(PLAYER, (player.x, player.y))
+    player_movement(keys_pressed, player)
+    alien_movement(aliens, player, player_health, shield)
+    handle_bullets(player_bullets, player, aliens)
     if keys_pressed[pygame.K_RSHIFT]:
-        shield = pygame.Rect(player.x - 15, player.y - 15, SHIELD_WIDTH, SHIELD_HEIGHT)
         pygame.draw.rect(WIN, WHITE, shield)
-    for bullet in bullets:
+    for bullet in player_bullets:
         pygame.draw.rect(WIN, WHITE, bullet)
     for alien in aliens:
         pygame.draw.rect(WIN, GREEN, alien)
@@ -102,18 +105,19 @@ def player_movement(keys_pressed, player):
         player.x += VEL
 
 # TODO:
-# Fix it so the aliens don't collide with eachother
 # remove alien when they collide with player shield
 # decrease health when alien collides with player
-def alien_movement(aliens, player):
+def alien_movement(aliens, player, player_health, shield):
     for alien in aliens:
-        if player.x > alien.x: # alien is to the left of player
-           alien.x += ALIEN_VEL
-        if player.x < alien.x:
-           alien.x -= ALIEN_VEL
         alien.y += ALIEN_VEL
         if alien.colliderect(player):
+            player_health -= 1
             aliens.remove(alien)
+        if alien.colliderect(shield):
+            aliens.remove(alien)
+        if alien.y >= HEIGHT:
+            aliens.remove(alien)
+        
         
 # TODO: 
 # Add bullet hit sound
@@ -124,7 +128,7 @@ def alien_movement(aliens, player):
 def handle_bullets(player_bullets, player, aliens):
     for bullet in player_bullets:
         bullet.y -= BULLET_VEL
-        if bullet.y <= -10:
+        if bullet.y <= -BULLET_HEIGHT:
             player_bullets.remove(bullet)
         for alien in aliens:
             if alien.colliderect(bullet):
@@ -153,7 +157,9 @@ def game():
     pygame.mixer.music.play(-1)
 
     player = pygame.Rect(WIDTH//2 - (PLAYER_WIDTH//2), HEIGHT - (PLAYER_HEIGHT + 5), PLAYER_WIDTH, PLAYER_HEIGHT)
+
     player_bullets = []
+    player_health = 3
     aliens = populate_aliens()
     score = 0
     game_state = True
@@ -173,10 +179,8 @@ def game():
                 bullet = pygame.Rect(player.x + PLAYER_WIDTH//2, player.y, BULLET_WIDTH, BULLET_HEIGHT)
                 player_bullets.append(bullet)
         
-        player_movement(keys_pressed, player)
-        alien_movement(aliens, player)
-        handle_bullets(player_bullets, player, aliens)
-        draw_game(player_bullets, player, score, keys_pressed, aliens)
+        shield = pygame.Rect(player.x, player.y, SHIELD_WIDTH, SHIELD_HEIGHT)
+        draw_game(player_bullets, player, score, keys_pressed, aliens, shield)
 
 if __name__ == '__main__':
     menu()
